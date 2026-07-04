@@ -33,22 +33,6 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
-    bool _syn_sent = false;
-    bool _fin_sent = false;
-    uint64_t _bytes_in_flight = 0;
-    uint16_t _receiver_window_size = 0;
-    uint16_t _receiver_free_space = 0;
-    uint16_t _consecutive_retransmissions = 0;
-    unsigned int _rto = 0;
-    unsigned int _time_elapsed = 0;
-    bool _timer_running = false;
-    std::queue<TCPSegment> _segments_outstanding{};
-    // Lab4 modify:
-    // bool _fill_window_called_by_ack_received{false};
-
-    bool _ack_valid(uint64_t abs_ackno);
-    void _send_segment(TCPSegment &seg);
-
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
