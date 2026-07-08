@@ -15,23 +15,31 @@
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
+    ByteStream _output;
+    size_t _capacity{};
 
-    ByteStream _output;  //!< The reassembled in-order byte stream
-    size_t _capacity;    //!< The maximum number of bytes
-    
-    size_t _required_index{}; // the 0-based index that comes immediately after the in-order bytestream in _output
-                            // for example: if _output = "abc" with index of c in incoming bytestream as 3, reqd index = 4
-    size_t last_index_of_stream{}; // the last index of the incoming bytestream. once you see this index, you know that the stream has ended. this is only set when eof is true in push_substring
-    size_t _auxiliary_capacity() { return _capacity - _output.buffer_size();} // byte capacity the reassembler has to work with
-    size_t _auxiliary_size{};                                                  // bytes currently with the reassembler
-    size_t _remaining_auxiliary_size() { return _auxiliary_capacity() - _auxiliary_size; }  // bytes we can add more to the reassembler before it's full
-    size_t _size() { return _auxiliary_size + _output.buffer_size(); }
-    std::map<size_t, std::string> _auxiliary_storage{};                   // containg <(start or end), string as deque>
-    bool _is_full() { return _size()==_capacity; }
+    size_t _last_index{};
+    size_t _reqd_index{};
+    size_t _auxiliary_size{};
+    bool _eof_received{};
 
-    std::string _char_as_string(char ch) {
-      std::string s{};
-      s+=ch;
+    size_t _size() { return _output.buffer_size()+_auxiliary_size; }
+    bool _is_full() { return _size() >= _capacity; }
+
+    std::map<size_t, std::string> _auxiliary_buffer{};
+
+    bool _is_start(const std::map<size_t, std::string>::iterator &it) {
+      if (it==_auxiliary_buffer.end() || it->second.empty()) return false;
+      return true;
+    }
+
+    bool _is_end(const std::map<size_t, std::string>::iterator &it) {
+      if (it==_auxiliary_buffer.end() || !it->second.empty()) return false;
+      return true;
+    }
+
+    std::string _char_as_string(char c){
+      std::string s(1, c);
       return s;
     }
 
