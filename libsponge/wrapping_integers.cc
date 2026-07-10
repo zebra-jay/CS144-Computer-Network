@@ -47,8 +47,8 @@ uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     uint64_t abs_seqno = relative.raw_value() + offset;
 
     if ( abs_diff(abs_seqno, checkpoint)<diff ) {}
-    else if (checkpoint>abs_seqno) abs_seqno+=mod ;
-    else if (checkpoint<abs_seqno && abs_seqno>=(1ULL<<32)) abs_seqno-=mod;
+    else if ( ((abs_seqno&diff) == 0) ) abs_seqno+=mod;
+    else if ( ((checkpoint&diff) == 0) && (abs_seqno>=mod)) abs_seqno-=mod;
 
     return abs_seqno;
 }
