@@ -18,12 +18,16 @@ class TCPReceiver {
     StreamReassembler _reassembler;
 
     //! The maximum number of bytes we'll store.
-    size_t _capacity;
+    size_t _capacity{};
 
-    optional<WrappingInt32> _isn;
-    uint64_t _reqd_index;
+    std::optional<WrappingInt32> _isn{};
+    uint64_t _reqd_index() { 
+      return static_cast<uint64_t>(_reassembler.stream_out().bytes_written()); 
+    }
+    uint64_t _bytes_assembled() { return _reqd_index(); }
+    uint64_t fin_offset() const { return _reassembler.stream_out().input_ended() ? 1ULL : 0ULL; }
 
-    bool _eof_received;
+    // bool _eof_received{};
 
 
   public:

@@ -13,29 +13,25 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     Buffer payload = seg.payload();
 
     if (header.syn) _isn = header.seqno;
-    if (header.fin) _eof_received = true;
+    // if (header.fin) _eof_received = true;
 
-    uint64_t absolute_index = unwrap(WrappingInt32(header.seqno), _isn.value(), _eof_received);
+    
+    if (_isn.has_value() && (not (_reassembler.stream_out()).input_ended())) // Receiving
+    {
+    WrappingInt32 start_index(header.seqno + (header.syn? 1 : 0));
+    uint64_t absolute_index = unwrap(start_index, _isn.value(), _bytes_assembled());
+    _reassembler.push_substring(payload.copy(), absolute_index-1, header.fin);
 
-
-    // if (not _isn.has_value()) // No SYN received yet
-    // {
-
-    // }
-    // else if (_isn.has_value() && (not (_reassembler.stream_out()).input_ended())) // Receiving
-    // {
-
-        // _reassembler.push_substring(payload, absolute_index-1, _eof_received);
-
-    // }
-    // else if (_reassembler.stream_out().input_ended()) {} // Ended 
+    }
     
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const {
     if (_isn.has_value()) {
-        uint64_t required_index = _reassembler.stream_out().bytes_written();
-        return wrap(required_index, _isn.value());
+        uint64_t string_required_index = _reassembler.stream_out().bytes_written();
+        uint64_t absolute_required_index = string_required_index+1;
+        uint64_t offset = fin_offset();
+        return wrap(absolute_required_index+offset, _isn.value()); // not an optional? okay?
     }
     return nullopt;
 }
