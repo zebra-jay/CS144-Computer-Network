@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <queue>
+#include <limits>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -20,18 +21,43 @@ class TCPSender {
   private:
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
+    //! 
+    WrappingInt32 _ackno = wrap(0, _isn);
+    uint64_t _abs_ackno{0};
+    // uint16_t _window = std::numeric_limits<uint16_t>::max(); wrong. 
+    uint16_t _window{};
+    bool _window_received{};
+    uint16_t _eff_window_size() { return (_window==0) ? 1 : _window; }
+    //! the (absolute) sequence number for the next byte to be sent
+    uint64_t _next_seqno{0};
+
+    uint64_t _bytes_in_flight{};
+    bool _fin_sent{};
+
 
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
+    //! segments which are in flight. have not been fully ackno'd
+    std::queue<std::pair<std::pair<uint64_t, uint64_t>, TCPSegment>> _outstanding_segments{};
 
+    /*
+      Time-based variables
+    */
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
+    //! time
+    unsigned int _time{};
+    //! RTO
+    unsigned int _RTO{};
+    //!
+    unsigned int _retransmissions{};
 
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
-    //! the (absolute) sequence number for the next byte to be sent
-    uint64_t _next_seqno{0};
+    bool FIN_ACKED () {return _abs_ackno == 2 + _stream.bytes_read(); }
+
+
 
   public:
     //! Initialize a TCPSender
